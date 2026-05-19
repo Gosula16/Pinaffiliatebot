@@ -8,6 +8,9 @@ on:
     - cron: '30 16 * * *' # 10:00 PM IST
   workflow_dispatch:       # Manual trigger from GitHub UI
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   run-bot:
     runs-on: ubuntu-latest
@@ -58,4 +61,5 @@ jobs:
         with:
           name: pinbot-images-${{ github.run_number }}
           path: output/images/
+          if-no-files-found: ignore
           retention-days: 3
