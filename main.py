@@ -6,6 +6,9 @@ Complete pipeline: Trends → Products → Images → Captions → Post → Rota
 import logging, os, sys, json, time, random
 from datetime import datetime
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 os.makedirs("logs", exist_ok=True)
 os.makedirs("data", exist_ok=True)
 os.makedirs("output/images", exist_ok=True)
