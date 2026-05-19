@@ -1,156 +1,119 @@
-# PinAffiliateBot v1.0
-**Pinterest + Amazon Affiliate Automation — Complete System**
+# PinAffiliateBot
 
----
+Pinterest + Amazon India affiliate automation.
 
-## What This Does
-1. Fetches trending product keywords from Google India
-2. Searches Amazon.in for matching products via PAAPI
-3. Generates Pinterest-optimized images (1000×1500px) with Pillow
-4. Writes unique AI captions per pin via Anthropic API
-5. Posts to Pinterest with human-like random delays
-6. Re-pins to secondary boards over 3–7 days automatically
-7. Sends Telegram alerts for stats and errors
+## What It Does
 
----
+1. Loads trending product keywords.
+2. Fetches matching Amazon India products.
+3. Generates Pinterest-ready images.
+4. Writes captions with Google Gemini, with a local fallback if Gemini is unavailable.
+5. Posts pins to Pinterest boards.
+6. Tracks daily posting limits and queues board rotation metadata.
+7. Sends optional Telegram alerts.
 
-## Folder Structure
-```
-pinbot/
-├── main.py                  # Master runner — start here
-├── config.py                # All settings and keys
-├── setup.bat                # Windows one-click setup
-├── requirements.txt         # pip dependencies
-├── .env.example             # Copy to .env and fill keys
-├── dashboard.html           # Open in browser for control panel
-├── modules/
-│   ├── trend_engine.py      # M1: Google Trends
-│   ├── product_fetcher.py   # M2: Amazon PAAPI
-│   ├── image_generator.py   # M3: Pillow pin images
-│   ├── caption_writer.py    # M4: Anthropic AI captions
-│   ├── pin_poster.py        # M5: Pinterest API poster
-│   ├── scheduler.py         # M6: Posting windows
-│   ├── board_rotation.py    # Re-pin to secondary boards
-│   ├── notifier.py          # Telegram alerts
-│   └── retry.py             # Exponential backoff for APIs
-├── output/images/           # Generated pin images saved here
-├── data/
-│   ├── trends.json          # Today's keywords cache
-│   ├── products.json        # Fetched products cache
-│   ├── posted_log.json      # Every pin ever posted
-│   ├── daily_stats.json     # Daily pin counts
-│   └── rotation_queue.json  # Board re-pin schedule
-└── logs/
-    └── app.log              # Full activity log
-```
+## Setup
 
----
+Install dependencies:
 
-## Step-by-Step Setup
-
-### Step 1 — Run setup.bat
-```
-Double-click setup.bat
-```
-This installs all Python packages and creates folders.
-
-### Step 2 — Get Your API Keys
-
-**Amazon Associates + PAAPI:**
-1. Sign up: https://affiliate-program.amazon.in
-2. Make 3 qualifying sales to unlock PAAPI
-3. Go to: Associates Central → Tools → Product Advertising API
-4. Copy: Access Key, Secret Key, Partner Tag (format: yourname-21)
-
-**Pinterest Developer Token:**
-1. Go to: https://developers.pinterest.com
-2. Create App → Generate Access Token
-3. Enable scopes: `pins:read_write` and `boards:read`
-4. Copy your Board IDs from each board's URL
-
-**Anthropic API Key:**
-1. Go to: https://console.anthropic.com
-2. Create API key → copy it
-
-**Telegram Bot (optional but recommended):**
-1. Message @BotFather on Telegram → /newbot
-2. Copy your bot token
-3. Get your Chat ID from @userinfobot
-
-### Step 3 — Fill .env file
-```
-Copy .env.example → rename to .env
-Fill in all your keys
-```
-
-### Step 4 — Test Run (no posting)
 ```bash
-python main.py --dry-run
+pip install -r requirements.txt
 ```
-Check `output/images/` — you should see generated pin images.
 
-### Step 5 — First Real Run
+Create a local `.env` file from the template:
+
 ```bash
-python main.py --once
+cp .env.example .env
 ```
-Posts one batch to Pinterest. Check your Pinterest account.
 
-### Step 6 — Full Auto Mode
+Fill in these required values:
+
 ```bash
-python main.py --loop
+AMAZON_ACCESS_KEY=
+AMAZON_SECRET_KEY=
+AMAZON_PARTNER_TAG=
+PINTEREST_ACCESS_TOKEN=
+BOARD_TECH=
+BOARD_HOME=
+BOARD_FITNESS=
+BOARD_DEALS=
+GEMINI_API_KEY=
 ```
-Runs continuously, respects posting windows, auto-schedules.
 
----
+The caption module uses `GEMINI_API_KEY`. Do not use `ANTHROPIC_API_KEY`; this bot is wired for Google Gemini.
 
-## All Commands
+## GitHub Actions Secrets
+
+For scheduled cloud runs, add these repository secrets in GitHub:
+
+```text
+AMAZON_ACCESS_KEY
+AMAZON_SECRET_KEY
+AMAZON_PARTNER_TAG
+PINTEREST_ACCESS_TOKEN
+BOARD_TECH
+BOARD_HOME
+BOARD_FITNESS
+BOARD_DEALS
+GEMINI_API_KEY
+TELEGRAM_BOT_TOKEN
+TELEGRAM_CHAT_ID
+```
+
+The workflow runs four times a day and sets `SKIP_WINDOW_CHECK=true`, because GitHub runners use UTC while the bot schedule is intended for IST windows.
+
+## Diagnose Configuration
+
+Before expecting pins to post, run:
+
 ```bash
-python main.py --dry-run    # Test without posting — check images
-python main.py --once       # Post one batch now
-python main.py --loop       # Run continuously (for VPS/always-on PC)
+python diagnose.py
+```
+
+This checks required environment variables, validates the Pinterest token and board IDs, and sends a tiny Gemini API test request.
+
+## Commands
+
+```bash
+python main.py --dry-run    # Generate images and captions without posting
+python main.py --once       # Run one posting batch
+python main.py --loop       # Keep checking posting windows locally
 python main.py --trends     # Refresh trends only
 python main.py --products   # Fetch products only
 python main.py --summary    # Send Telegram daily summary
+python diagnose.py          # Check configuration
 ```
 
----
+## Posting Settings
 
-## Posting Schedule (IST)
-| Window | Time | Pins |
-|--------|------|------|
-| Morning | 07:30 – 09:00 | 5 |
-| Lunch | 12:00 – 13:00 | 4 |
-| Evening | 18:30 – 20:00 | 5 |
-| Night | 22:00 – 23:00 | 3 |
-| **Total/day** | | **17** |
+Default settings:
 
-Delays between pins: **3–7 minutes random** (human-like)
+```text
+MAX_PINS_PER_DAY=15
+PINS_PER_RUN=5
+MIN_DELAY_SEC=180
+MAX_DELAY_SEC=420
+```
 
----
+`PINS_PER_RUN` is used when `SKIP_WINDOW_CHECK=true`, such as in GitHub Actions.
 
-## Anti-Ban Rules (CRITICAL)
-- Week 1: max 8 pins/day — set `MAX_PINS_PER_DAY=8` in .env
-- Week 2: increase to 12
-- Week 3: increase to 17
-- Never run before 7 AM or after 11 PM
-- Manually like/save a few pins per day from your account
-- Verify your website domain in Pinterest settings
+## Deployment Notes
 
----
+The bot runs through GitHub Actions. Vercel is only configured to host the static files in `public/`; it does not run the Python bot.
 
-## Expandability Roadmap
-- V1.5: Add Flipkart affiliate as second source
-- V2.0: Multi-account manager (10+ accounts)
-- V2.5: Hindi/Hinglish captions for regional reach
-- V3.0: Video pins via MoviePy, Idea Pins support
+Removed stale platform files:
 
----
+- `Procfile` was for Heroku.
+- `netlify.toml` was for Netlify.
+- Root `dashboard.html` duplicated `public/dashboard.html`.
+- `setup.bat` was a local Windows helper and is not needed for the repo.
 
 ## Troubleshooting
-| Problem | Fix |
-|---------|-----|
-| Pinterest 401 error | Token expired — generate new OAuth token |
-| PAAPI empty results | Check partner tag, wait for 3 sales quota |
-| Images not generating | Install Pillow: `pip install Pillow` |
-| pytrends blocked | Falls back to evergreen keywords automatically |
-| No products showing | Run `python main.py --products` to debug |
+
+| Problem | What to check |
+| --- | --- |
+| Captions fall back instead of using AI | Confirm `GEMINI_API_KEY` is set and `python diagnose.py` passes |
+| Pinterest 401 | Refresh `PINTEREST_ACCESS_TOKEN` |
+| Board errors | Use Pinterest board IDs, not board names or URLs |
+| No Amazon products | Confirm PAAPI credentials and partner tag are active |
+| GitHub run produces no pins | Check Actions logs and uploaded `logs/` artifact |

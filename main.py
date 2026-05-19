@@ -38,6 +38,18 @@ from modules.scheduler       import (
 from config import MAX_PINS_PER_DAY
 
 
+def _truthy_env(name: str) -> bool:
+    return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _pins_per_forced_run(remaining: int) -> int:
+    try:
+        configured = int(os.getenv("PINS_PER_RUN", "5"))
+    except ValueError:
+        configured = 5
+    return min(max(configured, 1), remaining)
+
+
 def run_pipeline(dry_run: bool = False):
     logger.info("=" * 60)
     logger.info(f"PinAffiliateBot starting | dry_run={dry_run} | {datetime.now()}")
@@ -51,8 +63,12 @@ def run_pipeline(dry_run: bool = False):
     remaining = MAX_PINS_PER_DAY - pins_today
 
     # ── Window check ─────────────────────────────────────────
+    skip_window_check = _truthy_env("SKIP_WINDOW_CHECK")
     in_window, window_pins = is_posting_window()
-    if not in_window and not dry_run:
+    if skip_window_check and not dry_run:
+        logger.info("SKIP_WINDOW_CHECK=true - forcing one posting batch")
+        window_pins = _pins_per_forced_run(remaining)
+    elif not in_window and not dry_run:
         wait_for_next_window()
         in_window, window_pins = is_posting_window()
     batch_size = min(window_pins, remaining)
