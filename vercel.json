@@ -1,8 +1,9 @@
 {
+  "outputDirectory": "public",
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/dashboard.html"
+      "destination": "/index.html"
     }
   ]
 }
