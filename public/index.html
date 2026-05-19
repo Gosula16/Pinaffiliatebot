@@ -1,948 +1,275 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PinAffiliateBot — Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg:       #0d0f14;
-    --surface:  #151820;
-    --surface2: #1c2030;
-    --border:   #2a2f3d;
-    --red:      #e63946;
-    --green:    #2ecc71;
-    --amber:    #f39c12;
-    --blue:     #3b82f6;
-    --text:     #e8eaf0;
-    --muted:    #6b7280;
-    --font:     'Syne', sans-serif;
-    --mono:     'JetBrains Mono', monospace;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PinAffiliateBot</title>
+  <style>
+    :root {
+      --bg: #101114;
+      --panel: #181a20;
+      --panel-2: #20232b;
+      --text: #f4f5f7;
+      --muted: #9ca3af;
+      --line: #30343d;
+      --red: #e63946;
+      --green: #2ecc71;
+      --amber: #f2b84b;
+      --blue: #4f8cff;
+      --shadow: 0 20px 60px rgba(0, 0, 0, .32);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
 
-  /* ── Layout ── */
-  .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+    * { box-sizing: border-box; }
 
-  /* ── Sidebar ── */
-  .sidebar {
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    padding: 28px 0;
-    display: flex; flex-direction: column;
-  }
-  .logo {
-    padding: 0 24px 28px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 20px;
-  }
-  .logo-mark { font-size: 22px; font-weight: 800; color: var(--red); letter-spacing: -1px; }
-  .logo-sub  { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
-  .nav-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 24px; font-size: 13px; font-weight: 600;
-    color: var(--muted); cursor: pointer; transition: all .15s;
-    border-left: 3px solid transparent;
-  }
-  .nav-item:hover  { color: var(--text); background: var(--surface2); }
-  .nav-item.active { color: var(--red);  border-left-color: var(--red); background: var(--surface2); }
-  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
-  .sidebar-footer { margin-top: auto; padding: 20px 24px; }
-  .status-dot {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 11px; font-family: var(--mono); color: var(--muted);
-  }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
-  .dot.off { background: var(--muted); animation: none; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(230, 57, 70, .14), transparent 32rem),
+        radial-gradient(circle at 85% 10%, rgba(79, 140, 255, .16), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+    }
 
-  /* ── Main ── */
-  .main { padding: 32px 36px; overflow-y: auto; }
-  .page { display: none; }
-  .page.active { display: block; }
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0;
+    }
 
-  /* ── Page header ── */
-  .page-header { margin-bottom: 28px; }
-  .page-title  { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
-  .page-sub    { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+      gap: 28px;
+      align-items: stretch;
+      margin-bottom: 28px;
+    }
 
-  /* ── Stat cards ── */
-  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 28px; }
-  .stat-card  {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 20px;
-  }
-  .stat-label  { font-size: 11px; font-family: var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-  .stat-value  { font-size: 32px; font-weight: 800; margin: 8px 0 4px; letter-spacing: -1px; }
-  .stat-change { font-size: 11px; font-family: var(--mono); }
-  .up   { color: var(--green); }
-  .down { color: var(--red);   }
+    .intro, .panel {
+      background: rgba(24, 26, 32, .9);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
 
-  /* ── Section card ── */
-  .card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 24px; margin-bottom: 20px;
-  }
-  .card-title { font-size: 14px; font-weight: 600; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
-  .card-title .badge {
-    font-size: 10px; font-family: var(--mono); padding: 2px 8px;
-    border-radius: 20px; background: var(--surface2); color: var(--muted);
-  }
+    .intro {
+      padding: 36px;
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
 
-  /* ── Two-col ── */
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .eyebrow {
+      color: var(--red);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
 
-  /* ── Table ── */
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; padding: 10px 12px; font-size: 10px; font-family: var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
-  td { padding: 12px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--surface2); }
+    h1 {
+      font-size: clamp(42px, 6vw, 72px);
+      line-height: .94;
+      margin: 0;
+      letter-spacing: 0;
+    }
 
-  /* ── Buttons ── */
-  .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;
-    font-family: var(--font); border: none; cursor: pointer; transition: all .15s;
-  }
-  .btn-primary { background: var(--red);    color: #fff; }
-  .btn-primary:hover { background: #c0303b; }
-  .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
-  .btn-outline:hover { background: var(--surface2); }
-  .btn-green  { background: var(--green);   color: #0d0f14; }
-  .btn-green:hover { opacity: .85; }
-  .btn-sm { padding: 6px 12px; font-size: 12px; }
-  .btn-row { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+    .lede {
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.6;
+      max-width: 680px;
+      margin: 22px 0 0;
+    }
 
-  /* ── Form elements ── */
-  .form-group { margin-bottom: 16px; }
-  label { display: block; font-size: 11px; font-family: var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-  input[type=text], input[type=number], input[type=password], select, textarea {
-    width: 100%; background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 10px 14px; color: var(--text);
-    font-family: var(--mono); font-size: 13px; outline: none; transition: border .15s;
-  }
-  input:focus, select:focus, textarea:focus { border-color: var(--red); }
-  textarea { resize: vertical; min-height: 80px; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
 
-  /* ── Tags ── */
-  .tag {
-    display: inline-block; font-size: 11px; font-family: var(--mono);
-    padding: 3px 10px; border-radius: 20px;
-  }
-  .tag-green  { background: rgba(46,204,113,.15); color: var(--green); }
-  .tag-red    { background: rgba(230,57,70,.15);  color: var(--red);   }
-  .tag-amber  { background: rgba(243,156,18,.15); color: var(--amber); }
-  .tag-blue   { background: rgba(59,130,246,.15); color: var(--blue);  }
-  .tag-gray   { background: var(--surface2);      color: var(--muted); }
+    a.button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 750;
+      background: var(--panel-2);
+    }
 
-  /* ── Log terminal ── */
-  .terminal {
-    background: #0a0c10; border: 1px solid var(--border); border-radius: 8px;
-    padding: 16px; font-family: var(--mono); font-size: 12px; line-height: 1.7;
-    max-height: 320px; overflow-y: auto; color: #7ec8a0;
-  }
-  .log-time  { color: var(--muted); }
-  .log-info  { color: #7ec8a0; }
-  .log-warn  { color: var(--amber); }
-  .log-error { color: var(--red); }
-  .log-ok    { color: var(--green); }
+    a.button.primary {
+      background: var(--red);
+      border-color: var(--red);
+      color: white;
+    }
 
-  /* ── Progress bar ── */
-  .progress-wrap { background: var(--surface2); border-radius: 4px; height: 6px; margin-top: 8px; }
-  .progress-bar  { height: 6px; border-radius: 4px; background: var(--red); transition: width .5s; }
+    .panel {
+      padding: 26px;
+    }
 
-  /* ── Schedule timeline ── */
-  .timeline { display: flex; flex-direction: column; gap: 12px; }
-  .tl-item  { display: flex; align-items: center; gap: 14px; }
-  .tl-time  { font-family: var(--mono); font-size: 12px; color: var(--muted); min-width: 60px; }
-  .tl-line  { width: 2px; height: 28px; background: var(--border); margin-left: 6px; }
-  .tl-dot   { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .tl-dot.done    { background: var(--green); }
-  .tl-dot.active  { background: var(--red); box-shadow: 0 0 8px var(--red); }
-  .tl-dot.pending { background: var(--border); }
-  .tl-label { font-size: 13px; }
-  .tl-pins  { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-left: auto; }
+    .panel h2 {
+      margin: 0 0 18px;
+      font-size: 18px;
+    }
 
-  /* ── Pinterest preview card ── */
-  .pin-preview {
-    background: #fff; border-radius: 16px; overflow: hidden; width: 200px;
-    box-shadow: 0 4px 20px rgba(0,0,0,.4); flex-shrink: 0;
-  }
-  .pin-img    { width: 100%; aspect-ratio: 2/3; background: linear-gradient(135deg,#1d3557,#e63946); position: relative; display: flex; align-items: center; justify-content: center; }
-  .pin-img-label { color: rgba(255,255,255,.5); font-size: 11px; font-family: var(--mono); }
-  .pin-info   { padding: 12px; }
-  .pin-title  { font-size: 12px; font-weight: 700; color: #111; line-height: 1.3; margin-bottom: 4px; font-family: var(--font); }
-  .pin-price  { font-size: 13px; font-weight: 800; color: var(--red); font-family: var(--mono); }
-  .pin-domain { font-size: 10px; color: #888; margin-top: 4px; }
+    .status-list {
+      display: grid;
+      gap: 12px;
+    }
 
-  .pin-gallery { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px; }
+    .status-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 14px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
 
-  /* ── Scrollbar ── */
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-</style>
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-top: 6px;
+      background: var(--green);
+    }
+
+    .dot.amber { background: var(--amber); }
+    .dot.blue { background: var(--blue); }
+
+    .status-title {
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .status-copy {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .metric {
+      padding: 20px;
+      background: rgba(24, 26, 32, .9);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 26px;
+      font-weight: 850;
+    }
+
+    code {
+      color: #f8d67a;
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 255, 255, .08);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    footer {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 28px;
+      text-align: center;
+    }
+
+    @media (max-width: 860px) {
+      main { padding: 24px 0; }
+      .hero, .grid { grid-template-columns: 1fr; }
+      .intro { min-height: auto; padding: 28px; }
+    }
+  </style>
 </head>
 <body>
-<div class="shell">
-
-  <!-- ── SIDEBAR ── -->
-  <aside class="sidebar">
-    <div class="logo">
-      <div class="logo-mark">PinBot</div>
-      <div class="logo-sub">Affiliate Automation</div>
-    </div>
-    <div class="nav-item active" onclick="nav('dashboard')">
-      <span class="nav-icon">◈</span> Dashboard
-    </div>
-    <div class="nav-item" onclick="nav('pipeline')">
-      <span class="nav-icon">⚡</span> Run Pipeline
-    </div>
-    <div class="nav-item" onclick="nav('products')">
-      <span class="nav-icon">🛍</span> Products
-    </div>
-    <div class="nav-item" onclick="nav('pins')">
-      <span class="nav-icon">📌</span> Posted Pins
-    </div>
-    <div class="nav-item" onclick="nav('schedule')">
-      <span class="nav-icon">🕐</span> Schedule
-    </div>
-    <div class="nav-item" onclick="nav('settings')">
-      <span class="nav-icon">⚙</span> Settings
-    </div>
-    <div class="nav-item" onclick="nav('logs')">
-      <span class="nav-icon">📋</span> Logs
-    </div>
-    <div class="sidebar-footer">
-      <div class="status-dot">
-        <div class="dot" id="bot-dot"></div>
-        <span id="bot-status">Bot idle</span>
-      </div>
-    </div>
-  </aside>
-
-  <!-- ── MAIN ── -->
-  <main class="main">
-
-    <!-- DASHBOARD PAGE -->
-    <div class="page active" id="page-dashboard">
-      <div class="page-header">
-        <div class="page-title">Dashboard</div>
-        <div class="page-sub" id="date-display"></div>
-      </div>
-
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">Pins Today</div>
-          <div class="stat-value up" id="stat-today">0</div>
-          <div class="stat-change up">▲ target: <span id="stat-target">15</span>/day</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Total Pins</div>
-          <div class="stat-value" id="stat-total">0</div>
-          <div class="stat-change" style="color:var(--muted)">all time</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Products Ready</div>
-          <div class="stat-value up" id="stat-products">0</div>
-          <div class="stat-change" style="color:var(--muted)">in queue</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Errors Today</div>
-          <div class="stat-value" id="stat-errors">0</div>
-          <div class="stat-change down" id="err-label"></div>
-        </div>
-      </div>
-
-      <div class="two-col">
-        <div class="card">
-          <div class="card-title">Today's Progress
-            <span class="badge" id="progress-pct">0%</span>
-          </div>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:8px">
-            <span id="prog-done">0</span> of <span id="prog-max">15</span> pins posted
-          </div>
-          <div class="progress-wrap">
-            <div class="progress-bar" id="progress-bar" style="width:0%"></div>
-          </div>
-          <div class="btn-row">
-            <button class="btn btn-primary" onclick="nav('pipeline')">⚡ Run Pipeline</button>
-            <button class="btn btn-outline" onclick="refreshStats()">↻ Refresh</button>
+  <main>
+    <section class="hero" aria-label="PinAffiliateBot overview">
+      <div class="intro">
+        <div>
+          <div class="eyebrow">GitHub Actions powered</div>
+          <h1>PinAffiliateBot</h1>
+          <p class="lede">
+            Automated Pinterest posting for Amazon India affiliate products.
+            The Python bot runs on GitHub Actions; this Vercel page is a clean
+            public status and setup landing page.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="https://github.com/Gosula16/Pinaffiliatebot/actions">View Runs</a>
+            <a class="button" href="https://github.com/Gosula16/Pinaffiliatebot">Open Repo</a>
           </div>
         </div>
-
-        <div class="card">
-          <div class="card-title">Posting Windows</div>
-          <div class="timeline" id="timeline-display"></div>
-        </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">Recent Activity <span class="badge" id="recent-count">0 entries</span></div>
-        <table id="recent-table">
-          <thead><tr>
-            <th>Time</th><th>ASIN</th><th>Title</th><th>Board</th><th>Status</th>
-          </tr></thead>
-          <tbody id="recent-body">
-            <tr><td colspan="5" style="color:var(--muted);text-align:center;padding:24px">No pins posted yet</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- PIPELINE PAGE -->
-    <div class="page" id="page-pipeline">
-      <div class="page-header">
-        <div class="page-title">Run Pipeline</div>
-        <div class="page-sub">Execute modules manually or schedule automatic runs</div>
-      </div>
-
-      <div class="two-col">
-        <div class="card">
-          <div class="card-title">Quick Actions</div>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <button class="btn btn-primary" onclick="runCmd('python main.py --dry-run')">
-              🧪 Dry Run (no posting)
-            </button>
-            <button class="btn btn-green" onclick="runCmd('python main.py --once')">
-              ▶ Run Once Now
-            </button>
-            <button class="btn btn-outline" onclick="runCmd('python main.py --trends')">
-              📈 Refresh Trends Only
-            </button>
-            <button class="btn btn-outline" onclick="runCmd('python main.py --products')">
-              🛍 Fetch Products Only
-            </button>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Module Status</div>
-          <div id="module-status" style="display:flex;flex-direction:column;gap:10px;">
-            <div class="mod-row" id="mod-m1">
-              <span>M1 — Trend Engine</span>
-              <span class="tag tag-gray">idle</span>
-            </div>
-            <div class="mod-row" id="mod-m2">
-              <span>M2 — Product Fetcher</span>
-              <span class="tag tag-gray">idle</span>
-            </div>
-            <div class="mod-row" id="mod-m3">
-              <span>M3 — Image Generator</span>
-              <span class="tag tag-gray">idle</span>
-            </div>
-            <div class="mod-row" id="mod-m4">
-              <span>M4 — Caption Writer</span>
-              <span class="tag tag-gray">idle</span>
-            </div>
-            <div class="mod-row" id="mod-m5">
-              <span>M5 — Pin Poster</span>
-              <span class="tag tag-gray">idle</span>
-            </div>
-            <div class="mod-row" id="mod-m6">
-              <span>M6 — Scheduler</span>
-              <span class="tag tag-gray">idle</span>
+      <aside class="panel" aria-label="Current deployment status">
+        <h2>Production Status</h2>
+        <div class="status-list">
+          <div class="status-item">
+            <span class="dot"></span>
+            <div>
+              <div class="status-title">Static dashboard live</div>
+              <div class="status-copy">Hosted by Vercel from the <code>public/</code> folder.</div>
             </div>
           </div>
-          <style>.mod-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)}.mod-row:last-child{border-bottom:none}</style>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Live Output</div>
-        <div class="terminal" id="pipeline-log">
-          <div class="log-info">[PinAffiliateBot] Ready. Click a button above to run.</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Preview — What a pin looks like</div>
-        <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
-          <div class="pin-preview">
-            <div class="pin-img">
-              <span class="pin-img-label">1000 × 1500</span>
-            </div>
-            <div class="pin-info">
-              <div class="pin-title" id="prev-title">Best Wireless Earbuds Under Rs 2000 | Top Pick</div>
-              <div class="pin-price" id="prev-price">Rs. 1,599</div>
-              <div class="pin-domain">amazon.in</div>
+          <div class="status-item">
+            <span class="dot blue"></span>
+            <div>
+              <div class="status-title">Bot runs on schedule</div>
+              <div class="status-copy">GitHub Actions triggers the Python pipeline four times per day.</div>
             </div>
           </div>
-          <div style="flex:1;min-width:260px;">
-            <div class="form-group">
-              <label>Preview Title</label>
-              <input type="text" id="prev-title-input" value="Best Wireless Earbuds Under Rs 2000 | Top Pick" oninput="document.getElementById('prev-title').textContent=this.value">
+          <div class="status-item">
+            <span class="dot amber"></span>
+            <div>
+              <div class="status-title">Secrets stay in GitHub</div>
+              <div class="status-copy">No API keys or fake run controls are exposed on this page.</div>
             </div>
-            <div class="form-group">
-              <label>Preview Price</label>
-              <input type="text" id="prev-price-input" value="Rs. 1,599" oninput="document.getElementById('prev-price').textContent=this.value">
-            </div>
-            <div class="form-group">
-              <label>Description Preview</label>
-              <textarea id="prev-desc">Looking for budget earbuds in India? This top-rated pick delivers crystal clear sound and 20hr battery life — all under Rs 2,000. Check link for current price on Amazon. #budgettechindia #wirelessearbuds #amazondeals</textarea>
-            </div>
-            <div style="font-size:12px;color:var(--muted);margin-top:8px;">Character count: <span id="desc-count">0</span>/500</div>
           </div>
         </div>
-      </div>
-    </div>
+      </aside>
+    </section>
 
-    <!-- PRODUCTS PAGE -->
-    <div class="page" id="page-products">
-      <div class="page-header">
-        <div class="page-title">Product Queue</div>
-        <div class="page-sub">Products fetched from Amazon — ready to be pinned</div>
+    <section class="grid" aria-label="Setup checklist">
+      <div class="metric">
+        <div class="metric-label">Before Posting</div>
+        <div class="metric-value"><code>python diagnose.py</code></div>
       </div>
-      <div class="card">
-        <div class="card-title">Trending Keywords <span class="badge" id="kw-count">0 keywords</span></div>
-        <div id="keywords-display" style="display:flex;flex-wrap:wrap;gap:8px;min-height:32px;">
-          <span style="color:var(--muted);font-size:13px;">No keywords loaded yet — run pipeline first</span>
-        </div>
+      <div class="metric">
+        <div class="metric-label">Workflow Batch</div>
+        <div class="metric-value">5 pins/run</div>
       </div>
-      <div class="card">
-        <div class="card-title">Products in Queue <span class="badge" id="prod-count-badge">0</span></div>
-        <table>
-          <thead><tr>
-            <th>ASIN</th><th>Title</th><th>Price</th><th>Keyword</th><th>Source</th><th>Action</th>
-          </tr></thead>
-          <tbody id="products-body">
-            <tr><td colspan="6" style="color:var(--muted);text-align:center;padding:24px">Run pipeline to fetch products</td></tr>
-          </tbody>
-        </table>
+      <div class="metric">
+        <div class="metric-label">Dashboard Scope</div>
+        <div class="metric-value">Static only</div>
       </div>
-    </div>
+    </section>
 
-    <!-- PINS PAGE -->
-    <div class="page" id="page-pins">
-      <div class="page-header">
-        <div class="page-title">Posted Pins</div>
-        <div class="page-sub">All pins ever posted — deduplication log</div>
-      </div>
-      <div class="card">
-        <div style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
-          <input type="text" placeholder="Search by ASIN or title..." id="pin-search" style="max-width:300px" oninput="filterPins()">
-          <select id="pin-board-filter" onchange="filterPins()" style="max-width:180px">
-            <option value="">All boards</option>
-          </select>
-        </div>
-        <table>
-          <thead><tr>
-            <th>Date</th><th>ASIN</th><th>Title</th><th>Price</th><th>Board</th><th>Pin ID</th>
-          </tr></thead>
-          <tbody id="pins-body">
-            <tr><td colspan="6" style="color:var(--muted);text-align:center;padding:24px">No pins in log yet</td></tr>
-          </tbody>
-        </table>
-        <div style="margin-top:12px;font-size:12px;color:var(--muted);font-family:var(--mono)" id="pin-total-label"></div>
-      </div>
-    </div>
-
-    <!-- SCHEDULE PAGE -->
-    <div class="page" id="page-schedule">
-      <div class="page-header">
-        <div class="page-title">Schedule</div>
-        <div class="page-sub">Configure daily posting windows</div>
-      </div>
-      <div class="two-col">
-        <div class="card">
-          <div class="card-title">Active Windows</div>
-          <div id="windows-display" style="display:flex;flex-direction:column;gap:14px;"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Delay Settings</div>
-          <div class="form-group">
-            <label>Min delay between pins (seconds)</label>
-            <input type="number" id="min-delay" value="180" min="60" max="600">
-          </div>
-          <div class="form-group">
-            <label>Max delay between pins (seconds)</label>
-            <input type="number" id="max-delay" value="420" min="120" max="1200">
-          </div>
-          <div class="form-group">
-            <label>Max pins per day</label>
-            <input type="number" id="max-pins" value="15" min="1" max="30">
-          </div>
-          <button class="btn btn-primary btn-sm" onclick="saveSchedule()">Save Settings</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Anti-Ban Checklist</div>
-        <div id="checklist" style="display:flex;flex-direction:column;gap:10px;"></div>
-      </div>
-    </div>
-
-    <!-- SETTINGS PAGE -->
-    <div class="page" id="page-settings">
-      <div class="page-header">
-        <div class="page-title">Settings</div>
-        <div class="page-sub">API keys and configuration — saved to .env file</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Amazon PAAPI</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Access Key</label>
-            <input type="password" id="s-amz-access" placeholder="AKIAIOSFODNN7EXAMPLE">
-          </div>
-          <div class="form-group">
-            <label>Secret Key</label>
-            <input type="password" id="s-amz-secret" placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Partner Tag (Associate ID)</label>
-          <input type="text" id="s-amz-tag" placeholder="yourtag-21">
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Pinterest</div>
-        <div class="form-group">
-          <label>OAuth Access Token</label>
-          <input type="password" id="s-pin-token" placeholder="pina_XXXXXXXXXX...">
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Tech Board ID</label>
-            <input type="text" id="s-board-tech" placeholder="1234567890123">
-          </div>
-          <div class="form-group">
-            <label>Home Board ID</label>
-            <input type="text" id="s-board-home" placeholder="1234567890124">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Fitness Board ID</label>
-            <input type="text" id="s-board-fitness" placeholder="1234567890125">
-          </div>
-          <div class="form-group">
-            <label>Deals Board ID</label>
-            <input type="text" id="s-board-deals" placeholder="1234567890126">
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Anthropic API</div>
-        <div class="form-group">
-          <label>API Key</label>
-          <input type="password" id="s-anthropic" placeholder="sk-ant-XXXXXXXXXX...">
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Generated .env</div>
-        <div class="terminal" id="env-preview" style="max-height:220px;color:#a8dadc;"></div>
-        <div class="btn-row">
-          <button class="btn btn-primary" onclick="generateEnv()">Generate .env</button>
-          <button class="btn btn-outline" onclick="copyEnv()">Copy to Clipboard</button>
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:10px;">⚠ Copy this content and save as <code style="font-family:var(--mono);color:var(--amber)">.env</code> in your project folder</div>
-      </div>
-    </div>
-
-    <!-- LOGS PAGE -->
-    <div class="page" id="page-logs">
-      <div class="page-header">
-        <div class="page-title">Logs</div>
-        <div class="page-sub">Activity and error log output</div>
-      </div>
-      <div class="card">
-        <div class="card-title">App Log <span class="badge">logs/app.log</span></div>
-        <div class="terminal" id="app-log-display" style="max-height:400px;"></div>
-        <div class="btn-row">
-          <button class="btn btn-outline btn-sm" onclick="refreshLogs()">↻ Refresh</button>
-          <button class="btn btn-outline btn-sm" onclick="clearLogDisplay()">✕ Clear view</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Daily Stats</div>
-        <table id="stats-table">
-          <thead><tr><th>Date</th><th>Pins Posted</th><th>Errors</th><th>Status</th></tr></thead>
-          <tbody id="stats-body">
-            <tr><td colspan="4" style="color:var(--muted);text-align:center;padding:24px">No stats yet</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
+    <footer>
+      PinAffiliateBot uses GitHub Actions for automation and Vercel for this public page.
+    </footer>
   </main>
-</div>
-
-<script>
-// ── State ──────────────────────────────────────────────────────
-const WINDOWS = [
-  {start:"07:30",end:"09:00",pins:5,label:"Morning peak"},
-  {start:"12:00",end:"13:00",pins:4,label:"Lunch break"},
-  {start:"18:30",end:"20:00",pins:5,label:"Evening peak"},
-  {start:"22:00",end:"23:00",pins:3,label:"Night batch"},
-];
-
-const CHECKLIST = [
-  {ok:true,  text:"Random delay 3–7 min between pins"},
-  {ok:true,  text:"Unique AI caption per pin"},
-  {ok:true,  text:"5 image templates rotating randomly"},
-  {ok:true,  text:"ASIN deduplication (30-day block)"},
-  {ok:true,  text:"Posting only 7 AM – 11 PM window"},
-  {ok:false, text:"Gradual ramp-up active (manual check)"},
-  {ok:false, text:"At least 1 manual pin per day (do this yourself)"},
-  {ok:false, text:"Pinterest website domain verified"},
-];
-
-let postedLog = JSON.parse(localStorage.getItem("pinbot_log") || "[]");
-let productsData = JSON.parse(localStorage.getItem("pinbot_products") || "[]");
-let statsData = JSON.parse(localStorage.getItem("pinbot_stats") || "{}");
-let simulRunning = false;
-let pipelineInterval = null;
-
-// ── Navigation ─────────────────────────────────────────────────
-function nav(page) {
-  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
-  document.getElementById("page-" + page).classList.add("active");
-  document.querySelectorAll(".nav-item").forEach(n => {
-    if (n.textContent.toLowerCase().includes(page.replace("-","")) ||
-        (page==="dashboard" && n.textContent.includes("Dashboard")) ||
-        (page==="pipeline" && n.textContent.includes("Pipeline")) ||
-        (page==="products" && n.textContent.includes("Products")) ||
-        (page==="pins"     && n.textContent.includes("Pins")) ||
-        (page==="schedule" && n.textContent.includes("Schedule")) ||
-        (page==="settings" && n.textContent.includes("Settings")) ||
-        (page==="logs"     && n.textContent.includes("Logs"))) {
-      n.classList.add("active");
-    }
-  });
-  if (page === "products") renderProducts();
-  if (page === "pins")     renderPins();
-  if (page === "logs")     renderLogs();
-  if (page === "schedule") renderSchedulePage();
-}
-
-// ── Date display ───────────────────────────────────────────────
-function updateDate() {
-  const d = new Date();
-  document.getElementById("date-display").textContent =
-    d.toLocaleDateString("en-IN", {weekday:"long",day:"numeric",month:"long",year:"numeric"}) +
-    " — " + d.toLocaleTimeString("en-IN");
-}
-setInterval(updateDate, 1000);
-updateDate();
-
-// ── Stats refresh ──────────────────────────────────────────────
-function refreshStats() {
-  const today = new Date().toISOString().split("T")[0];
-  const todayStats = statsData[today] || {pins_posted:0, errors:0};
-  const maxPins = parseInt(document.getElementById("max-pins")?.value || 15);
-  const pct = Math.min(100, Math.round(todayStats.pins_posted / maxPins * 100));
-
-  document.getElementById("stat-today").textContent   = todayStats.pins_posted;
-  document.getElementById("stat-errors").textContent  = todayStats.errors;
-  document.getElementById("stat-target").textContent  = maxPins;
-  document.getElementById("stat-products").textContent = productsData.length;
-  document.getElementById("stat-total").textContent   = postedLog.length;
-  document.getElementById("progress-bar").style.width = pct + "%";
-  document.getElementById("progress-pct").textContent = pct + "%";
-  document.getElementById("prog-done").textContent    = todayStats.pins_posted;
-  document.getElementById("prog-max").textContent     = maxPins;
-  document.getElementById("err-label").textContent    = todayStats.errors > 0 ? "▼ fix in logs" : "all clear";
-
-  // Recent table
-  const tbody = document.getElementById("recent-body");
-  const recent = [...postedLog].reverse().slice(0,8);
-  if (recent.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:24px">No pins posted yet</td></tr>`;
-  } else {
-    tbody.innerHTML = recent.map(p => `<tr>
-      <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${p.posted_at?.split("T")[1]?.split(".")[0] || "—"}</td>
-      <td style="font-family:var(--mono);font-size:11px">${p.asin}</td>
-      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.title}</td>
-      <td><span class="tag tag-blue">board</span></td>
-      <td><span class="tag tag-green">posted</span></td>
-    </tr>`).join("");
-    document.getElementById("recent-count").textContent = recent.length + " entries";
-  }
-
-  // Timeline
-  renderTimeline();
-}
-
-// ── Timeline ───────────────────────────────────────────────────
-function renderTimeline() {
-  const now = new Date().toTimeString().slice(0,5);
-  const el = document.getElementById("timeline-display");
-  el.innerHTML = WINDOWS.map(w => {
-    let state = "pending";
-    if (now > w.end)    state = "done";
-    if (now >= w.start && now <= w.end) state = "active";
-    return `<div class="tl-item">
-      <div class="tl-time">${w.start}</div>
-      <div class="tl-dot ${state}"></div>
-      <div class="tl-label">${w.label}</div>
-      <div class="tl-pins">${w.pins} pins</div>
-    </div>`;
-  }).join("");
-}
-
-// ── Pipeline simulation ────────────────────────────────────────
-const logMessages = [
-  ["info", "PinAffiliateBot starting | dry_run=False"],
-  ["info", "M1: Loading trends..."],
-  ["info", "  pytrends: fetching India trends"],
-  ["ok",   "  14 keywords loaded"],
-  ["info", "M2: Fetching products..."],
-  ["info", "  Searching: best wireless earbuds under 2000"],
-  ["info", "  PAAPI returned 3 products"],
-  ["info", "  Searching: budget smartphone india"],
-  ["ok",   "  18 fresh products saved to cache"],
-  ["info", "M3+M4: Generating images and captions..."],
-  ["info", "  Generated image: B09XYZ123_dark_red_20260518.jpg"],
-  ["info", "  Caption generated for ASIN B09XYZ123"],
-  ["info", "  Generated image: B08ABC456_navy_gold_20260518.jpg"],
-  ["info", "  Caption generated for ASIN B08ABC456"],
-  ["ok",   "  5 pins ready for posting"],
-  ["info", "M5: Posting to Pinterest..."],
-  ["info", "  Image uploaded, media_id=987654321"],
-  ["ok",   "  Pin posted! ID=pin_abc123 ASIN=B09XYZ123"],
-  ["info", "  Waiting 247s before next pin..."],
-  ["info", "  Image uploaded, media_id=987654322"],
-  ["ok",   "  Pin posted! ID=pin_abc124 ASIN=B08ABC456"],
-  ["ok",   "Batch complete: 5/5 pins posted"],
-  ["ok",   "Pipeline complete!"],
-];
-
-function runCmd(cmd) {
-  if (simulRunning) return;
-  simulRunning = true;
-  nav("pipeline");
-
-  const log = document.getElementById("pipeline-log");
-  log.innerHTML = "";
-  document.getElementById("bot-dot").className = "dot";
-  document.getElementById("bot-status").textContent = "Running...";
-
-  const mods = ["mod-m1","mod-m2","mod-m3","mod-m4","mod-m5","mod-m6"];
-  mods.forEach(m => {
-    const el = document.getElementById(m);
-    if (el) el.querySelector(".tag").className = "tag tag-gray";
-    if (el) el.querySelector(".tag").textContent = "idle";
-  });
-
-  let i = 0;
-  const interval = setInterval(() => {
-    if (i >= logMessages.length) {
-      clearInterval(interval);
-      simulRunning = false;
-      document.getElementById("bot-dot").className = "dot off";
-      document.getElementById("bot-status").textContent = "Bot idle";
-
-      // Update module statuses to done
-      mods.slice(0,5).forEach(m => {
-        const el = document.getElementById(m);
-        if (el) { el.querySelector(".tag").className = "tag tag-green"; el.querySelector(".tag").textContent = "done"; }
-      });
-
-      // Add fake entry to posted log
-      const today = new Date().toISOString().split("T")[0];
-      if (!statsData[today]) statsData[today] = {pins_posted:0, errors:0};
-      statsData[today].pins_posted += 5;
-      localStorage.setItem("pinbot_stats", JSON.stringify(statsData));
-
-      const asins = ["B09XYZ123","B08ABC456","B07DEF789","B06GHI012","B05JKL345"];
-      asins.forEach((a,idx) => {
-        postedLog.push({
-          asin: a, pin_id: "pin_abc" + (123+idx),
-          title: ["Best Wireless Earbuds Under Rs 2000","Budget Smartphone India 2026","Kitchen Gadget Must Have","Gaming Headset Budget Pick","Smart Watch Under Rs 3000"][idx],
-          price: [1599,12999,899,2499,2999][idx],
-          board_id: "board_tech",
-          posted_at: new Date().toISOString(),
-        });
-      });
-      localStorage.setItem("pinbot_log", JSON.stringify(postedLog));
-      refreshStats();
-      return;
-    }
-
-    const [type, msg] = logMessages[i];
-    const time = new Date().toTimeString().slice(0,8);
-    const div = document.createElement("div");
-    div.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-${type}">${msg}</span>`;
-    log.appendChild(div);
-    log.scrollTop = log.scrollHeight;
-
-    // Update module status
-    if (msg.includes("M1:")) { const el = document.getElementById("mod-m1"); if(el){el.querySelector(".tag").className="tag tag-amber";el.querySelector(".tag").textContent="running";} }
-    if (msg.includes("M2:")) { const el = document.getElementById("mod-m2"); if(el){el.querySelector(".tag").className="tag tag-amber";el.querySelector(".tag").textContent="running";} document.getElementById("mod-m1").querySelector(".tag").className="tag tag-green"; document.getElementById("mod-m1").querySelector(".tag").textContent="done"; }
-    if (msg.includes("M3")) { const el = document.getElementById("mod-m3"); if(el){el.querySelector(".tag").className="tag tag-amber";el.querySelector(".tag").textContent="running";} const e2 = document.getElementById("mod-m4"); if(e2){e2.querySelector(".tag").className="tag tag-amber";e2.querySelector(".tag").textContent="running";} }
-    if (msg.includes("M5:")) { const el = document.getElementById("mod-m5"); if(el){el.querySelector(".tag").className="tag tag-amber";el.querySelector(".tag").textContent="running";} }
-
-    i++;
-  }, 600);
-}
-
-// ── Products page ──────────────────────────────────────────────
-function renderProducts() {
-  // Sample keywords display
-  const kws = ["best wireless earbuds under 2000","budget smartphone india","kitchen gadgets amazon","best smartwatch under 3000","gaming accessories budget"];
-  const kwEl = document.getElementById("keywords-display");
-  kwEl.innerHTML = kws.map(k => `<span class="tag tag-blue">${k}</span>`).join("");
-  document.getElementById("kw-count").textContent = kws.length + " keywords";
-
-  // Sample products
-  const sampleProducts = [
-    {asin:"B09XYZ123", title:"boAt Airdopes 141 Bluetooth Earbuds", price:1299, keyword:"wireless earbuds", source:"paapi"},
-    {asin:"B08ABC456", title:"Redmi 13C 5G Smartphone", price:10999, keyword:"budget smartphone", source:"scrape"},
-    {asin:"B07DEF789", title:"Prestige Iris 750W Mixer Grinder", price:2450, keyword:"kitchen gadgets", source:"paapi"},
-    {asin:"B06GHI012", title:"Noise ColorFit Pro 4 Smartwatch", price:2999, keyword:"smartwatch", source:"paapi"},
-    {asin:"B05JKL345", title:"HyperX Cloud Earbuds II Gaming", price:3499, keyword:"gaming accessories", source:"scrape"},
-  ];
-  const tbody = document.getElementById("products-body");
-  tbody.innerHTML = sampleProducts.map(p => `<tr>
-    <td style="font-family:var(--mono);font-size:11px">${p.asin}</td>
-    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.title}</td>
-    <td style="font-family:var(--mono)">Rs. ${p.price.toLocaleString()}</td>
-    <td><span class="tag tag-blue">${p.keyword}</span></td>
-    <td><span class="tag ${p.source==='paapi'?'tag-green':'tag-amber'}">${p.source}</span></td>
-    <td><button class="btn btn-outline btn-sm" onclick="alert('Open: https://www.amazon.in/dp/${p.asin}')">View</button></td>
-  </tr>`).join("");
-  document.getElementById("prod-count-badge").textContent = sampleProducts.length;
-}
-
-// ── Pins page ──────────────────────────────────────────────────
-let allPins = [];
-function renderPins() {
-  allPins = [...postedLog].reverse();
-  document.getElementById("pin-total-label").textContent = `Total: ${allPins.length} pins in log`;
-  renderPinTable(allPins);
-}
-function filterPins() {
-  const q = document.getElementById("pin-search").value.toLowerCase();
-  const filtered = allPins.filter(p => p.asin.toLowerCase().includes(q) || p.title.toLowerCase().includes(q));
-  renderPinTable(filtered);
-}
-function renderPinTable(pins) {
-  const tbody = document.getElementById("pins-body");
-  if (!pins.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:24px">No pins in log yet — run pipeline first</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = pins.map(p => `<tr>
-    <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${p.posted_at?.split("T")[0]||"—"}</td>
-    <td style="font-family:var(--mono);font-size:11px">${p.asin}</td>
-    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.title}</td>
-    <td style="font-family:var(--mono)">Rs. ${(p.price||0).toLocaleString()}</td>
-    <td><span class="tag tag-blue">board</span></td>
-    <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${p.pin_id||"—"}</td>
-  </tr>`).join("");
-}
-
-// ── Schedule page ──────────────────────────────────────────────
-function renderSchedulePage() {
-  const wEl = document.getElementById("windows-display");
-  const now = new Date().toTimeString().slice(0,5);
-  wEl.innerHTML = WINDOWS.map(w => {
-    let state = "pending", stag = "tag-gray", stext = "pending";
-    if (now > w.end)   { state="done";   stag="tag-green"; stext="done"; }
-    if (now >= w.start && now <= w.end) { stag="tag-amber"; stext="active now"; }
-    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
-      <div style="min-width:120px;font-family:var(--mono);font-size:13px">${w.start} – ${w.end}</div>
-      <div style="flex:1;font-size:13px">${w.label}</div>
-      <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">${w.pins} pins</div>
-      <span class="tag ${stag}">${stext}</span>
-    </div>`;
-  }).join("");
-
-  const cEl = document.getElementById("checklist");
-  cEl.innerHTML = CHECKLIST.map(c => `<div style="display:flex;align-items:center;gap:10px;font-size:13px">
-    <span style="font-size:16px">${c.ok ? "✅" : "⬜"}</span>
-    <span style="color:${c.ok?'var(--text)':'var(--muted)'}">${c.text}</span>
-  </div>`).join("");
-}
-
-function saveSchedule() {
-  alert("Settings saved! Edit your .env file to apply delay changes permanently.");
-}
-
-// ── Settings / .env generator ──────────────────────────────────
-function generateEnv() {
-  const lines = [
-    "# PinAffiliateBot .env",
-    `AMAZON_ACCESS_KEY=${document.getElementById("s-amz-access").value || "your_key"}`,
-    `AMAZON_SECRET_KEY=${document.getElementById("s-amz-secret").value || "your_secret"}`,
-    `AMAZON_PARTNER_TAG=${document.getElementById("s-amz-tag").value || "yourtag-21"}`,
-    `PINTEREST_ACCESS_TOKEN=${document.getElementById("s-pin-token").value || "your_token"}`,
-    `BOARD_TECH=${document.getElementById("s-board-tech").value || ""}`,
-    `BOARD_HOME=${document.getElementById("s-board-home").value || ""}`,
-    `BOARD_FITNESS=${document.getElementById("s-board-fitness").value || ""}`,
-    `BOARD_DEALS=${document.getElementById("s-board-deals").value || ""}`,
-    `ANTHROPIC_API_KEY=${document.getElementById("s-anthropic").value || "your_key"}`,
-    `MAX_PINS_PER_DAY=${document.getElementById("max-pins")?.value || 15}`,
-    `MIN_DELAY_SEC=${document.getElementById("min-delay")?.value || 180}`,
-    `MAX_DELAY_SEC=${document.getElementById("max-delay")?.value || 420}`,
-  ];
-  document.getElementById("env-preview").textContent = lines.join("\n");
-}
-
-function copyEnv() {
-  const text = document.getElementById("env-preview").textContent;
-  navigator.clipboard.writeText(text).then(() => alert("Copied! Paste as .env in your project folder."));
-}
-
-// ── Logs page ──────────────────────────────────────────────────
-const SAMPLE_LOGS = [
-  "[07:30:01] [pinbot.main] INFO — PinAffiliateBot starting",
-  "[07:30:02] [pinbot.trends] INFO — Loading trends...",
-  "[07:30:04] [pinbot.trends] INFO — 14 keywords loaded",
-  "[07:30:05] [pinbot.products] INFO — Fetching products...",
-  "[07:31:12] [pinbot.products] INFO — 18 fresh products saved",
-  "[07:31:13] [pinbot.images] INFO — Generated: B09XYZ123_dark_red.jpg",
-  "[07:31:18] [pinbot.captions] INFO — Caption generated for ASIN B09XYZ123",
-  "[07:31:20] [pinbot.poster] INFO — Image uploaded, media_id=987654321",
-  "[07:31:21] [pinbot.poster] INFO — Pin posted! ID=pin_abc123",
-  "[07:31:22] [pinbot.poster] INFO — Waiting 312s before next pin...",
-];
-
-function renderLogs() {
-  const el = document.getElementById("app-log-display");
-  el.innerHTML = SAMPLE_LOGS.map(l => {
-    let cls = "log-info";
-    if (l.includes("ERROR")) cls = "log-error";
-    if (l.includes("WARN"))  cls = "log-warn";
-    if (l.includes("posted!") || l.includes("complete")) cls = "log-ok";
-    const time = l.match(/\[([^\]]+)\]/)?.[1] || "";
-    const rest = l.replace(/\[[^\]]+\]\s*/, "").replace(/\[[^\]]+\]\s*/, "").replace(/\w+ — /, "");
-    return `<div><span class="log-time">[${time}]</span> <span class="${cls}">${rest}</span></div>`;
-  }).join("");
-
-  // Stats table
-  const tbody = document.getElementById("stats-body");
-  const entries = Object.entries(statsData).reverse();
-  if (!entries.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:24px">No stats yet</td></tr>`;
-  } else {
-    tbody.innerHTML = entries.map(([date, s]) => `<tr>
-      <td style="font-family:var(--mono)">${date}</td>
-      <td style="font-family:var(--mono)">${s.pins_posted}</td>
-      <td style="font-family:var(--mono);color:${s.errors>0?'var(--red)':'var(--green)'}">${s.errors}</td>
-      <td><span class="tag ${s.errors===0?'tag-green':'tag-amber'}">${s.errors===0?'clean':'check errors'}</span></td>
-    </tr>`).join("");
-  }
-}
-
-function refreshLogs() { renderLogs(); }
-function clearLogDisplay() { document.getElementById("app-log-display").innerHTML = ""; }
-
-// ── Description char count ─────────────────────────────────────
-document.addEventListener("input", e => {
-  if (e.target.id === "prev-desc") {
-    document.getElementById("desc-count").textContent = e.target.value.length;
-  }
-});
-
-// ── Init ───────────────────────────────────────────────────────
-refreshStats();
-setInterval(refreshStats, 30000);
-</script>
 </body>
 </html>
