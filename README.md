@@ -1,18 +1,15 @@
 # PinAffiliateBot
 
-Pinterest + Amazon India affiliate automation.
+Pinterest + Amazon India affiliate automation. It discovers trending products, generates pin images, writes Gemini captions, and posts to Pinterest automatically through GitHub Actions.
 
-## What It Does
+## Root Causes Fixed
 
-1. Loads trending product keywords.
-2. Fetches matching Amazon India products.
-3. Generates Pinterest-ready images.
-4. Writes captions with Google Gemini, with a local fallback if Gemini is unavailable.
-5. Posts pins to Pinterest boards.
-6. Tracks daily posting limits and queues board rotation metadata.
-7. Sends optional Telegram alerts.
+1. `GEMINI_API_KEY` was confusingly documented as `ANTHROPIC_API_KEY` in the env template. The bot uses Google Gemini, so the template now uses `GEMINI_API_KEY`.
+2. The Gemini request URL was previously built at import time. It is now built when the request is made, after environment variables have loaded.
+3. GitHub Actions runs on exact UTC schedules for the intended IST posting windows, so the workflow now sets `SKIP_WINDOW_CHECK=true` and `PINS_PER_RUN=5`.
+4. Stale deployment files were removed: `Procfile`, `netlify.toml`, root `dashboard.html`, and `setup.bat`.
 
-## Setup
+## Quick Setup
 
 Install dependencies:
 
@@ -20,31 +17,71 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Create a local `.env` file from the template:
+Create a local `.env` file:
 
 ```bash
 cp .env.example .env
 ```
 
-Fill in these required values:
+Fill in the required values:
 
-```bash
-AMAZON_ACCESS_KEY=
-AMAZON_SECRET_KEY=
-AMAZON_PARTNER_TAG=
-PINTEREST_ACCESS_TOKEN=
-BOARD_TECH=
-BOARD_HOME=
-BOARD_FITNESS=
-BOARD_DEALS=
-GEMINI_API_KEY=
+```text
+AMAZON_ACCESS_KEY
+AMAZON_SECRET_KEY
+AMAZON_PARTNER_TAG
+PINTEREST_ACCESS_TOKEN
+BOARD_TECH
+BOARD_HOME
+BOARD_FITNESS
+BOARD_DEALS
+GEMINI_API_KEY
 ```
 
-The caption module uses `GEMINI_API_KEY`. Do not use `ANTHROPIC_API_KEY`; this bot is wired for Google Gemini.
+Optional notification values:
 
-## GitHub Actions Secrets
+```text
+TELEGRAM_BOT_TOKEN
+TELEGRAM_CHAT_ID
+```
 
-For scheduled cloud runs, add these repository secrets in GitHub:
+## Where To Get Keys
+
+| Key | Where to get it |
+| --- | --- |
+| `AMAZON_ACCESS_KEY` / `AMAZON_SECRET_KEY` | Associates Central > Tools > Product Advertising API |
+| `AMAZON_PARTNER_TAG` | Your Amazon Associates tag, usually like `yourname-21` |
+| `PINTEREST_ACCESS_TOKEN` | developers.pinterest.com > Your App > Generate Token |
+| `BOARD_TECH` / `BOARD_HOME` / `BOARD_FITNESS` / `BOARD_DEALS` | Pinterest API board IDs |
+| `GEMINI_API_KEY` | https://aistudio.google.com/app/apikey |
+| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | Optional, from Telegram |
+
+Pinterest token scopes should include `pins:read`, `pins:write`, and `boards:read`.
+
+## Diagnose Before Running
+
+Run:
+
+```bash
+python diagnose.py
+```
+
+This checks required environment variables, validates the Pinterest token, verifies configured board IDs, sends a tiny Gemini test request, and confirms local output directories exist.
+
+## Commands
+
+```bash
+python main.py --dry-run    # Generate images and captions without posting
+python main.py --once       # Run one posting batch
+python main.py --loop       # Keep checking posting windows locally
+python main.py --trends     # Refresh trends only
+python main.py --products   # Fetch products only
+python main.py --summary    # Send Telegram daily summary
+python diagnose.py          # Check configuration
+```
+
+## GitHub Actions
+
+Add these repository secrets in GitHub under Settings > Secrets and variables > Actions:
 
 ```text
 AMAZON_ACCESS_KEY
@@ -60,60 +97,59 @@ TELEGRAM_BOT_TOKEN
 TELEGRAM_CHAT_ID
 ```
 
-The workflow runs four times a day and sets `SKIP_WINDOW_CHECK=true`, because GitHub runners use UTC while the bot schedule is intended for IST windows.
+The workflow runs four times per day:
 
-## Diagnose Configuration
+| IST time | UTC cron |
+| --- | --- |
+| 07:30 | `0 2 * * *` |
+| 12:00 | `30 6 * * *` |
+| 18:30 | `0 13 * * *` |
+| 22:00 | `30 16 * * *` |
 
-Before expecting pins to post, run:
+The workflow also opts into Node 24 for GitHub JavaScript actions and ignores missing `output/images/` artifacts when no images were created.
 
-```bash
-python diagnose.py
-```
-
-This checks required environment variables, validates the Pinterest token and board IDs, and sends a tiny Gemini API test request.
-
-## Commands
-
-```bash
-python main.py --dry-run    # Generate images and captions without posting
-python main.py --once       # Run one posting batch
-python main.py --loop       # Keep checking posting windows locally
-python main.py --trends     # Refresh trends only
-python main.py --products   # Fetch products only
-python main.py --summary    # Send Telegram daily summary
-python diagnose.py          # Check configuration
-```
-
-## Posting Settings
-
-Default settings:
+## Project Structure
 
 ```text
-MAX_PINS_PER_DAY=15
-PINS_PER_RUN=5
-MIN_DELAY_SEC=180
-MAX_DELAY_SEC=420
+pinaffiliatebot/
+|-- main.py
+|-- config.py
+|-- diagnose.py
+|-- modules/
+|   |-- trend_engine.py
+|   |-- product_fetcher.py
+|   |-- image_generator.py
+|   |-- caption_writer.py
+|   |-- pin_poster.py
+|   |-- board_rotation.py
+|   |-- notifier.py
+|   `-- scheduler.py
+|-- public/
+|   |-- index.html
+|   `-- dashboard.html
+|-- .github/workflows/run_bot.yml
+|-- .env.example
+`-- requirements.txt
 ```
 
-`PINS_PER_RUN` is used when `SKIP_WINDOW_CHECK=true`, such as in GitHub Actions.
+## Vercel
 
-## Deployment Notes
+Vercel hosts only the static dashboard in `public/`. The Python bot runs through GitHub Actions, not Vercel.
 
-The bot runs through GitHub Actions. Vercel is only configured to host the static files in `public/`; it does not run the Python bot.
+Vercel settings:
 
-Removed stale platform files:
-
-- `Procfile` was for Heroku.
-- `netlify.toml` was for Netlify.
-- Root `dashboard.html` duplicated `public/dashboard.html`.
-- `setup.bat` was a local Windows helper and is not needed for the repo.
+```text
+Framework preset: Other
+Output directory: public
+Build command: none
+```
 
 ## Troubleshooting
 
 | Problem | What to check |
 | --- | --- |
-| Captions fall back instead of using AI | Confirm `GEMINI_API_KEY` is set and `python diagnose.py` passes |
-| Pinterest 401 | Refresh `PINTEREST_ACCESS_TOKEN` |
-| Board errors | Use Pinterest board IDs, not board names or URLs |
-| No Amazon products | Confirm PAAPI credentials and partner tag are active |
-| GitHub run produces no pins | Check Actions logs and uploaded `logs/` artifact |
+| Pins still do not post | Run `python diagnose.py`, then inspect the latest GitHub Actions logs |
+| Pinterest 401 | Regenerate `PINTEREST_ACCESS_TOKEN` |
+| Board ID failure | Use Pinterest API board IDs, not board names or URLs |
+| No products | PAAPI may be inactive; the bot will try scrape fallback |
+| Gemini falls back | Confirm `GEMINI_API_KEY` is set and valid |
